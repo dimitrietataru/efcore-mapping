@@ -6,7 +6,7 @@ namespace EFCore.Mapping.M2M.Scenarios.Third
 {
     public class DataContext : DbContext
     {
-        private const string CONNECTION_STRING = "Data Source=TATARU\\SQLEXPRESS;Initial Catalog=Mapping;Integrated Security=True";
+        private const string CONNECTION_STRING = "Data Source=TATARU\\SQLEXPRESS;Initial Catalog=Mapping-M2M-S3;Integrated Security=True";
 
         public virtual DbSet<User> Users { get; set; }
         public virtual DbSet<Group> Groups { get; set; }
