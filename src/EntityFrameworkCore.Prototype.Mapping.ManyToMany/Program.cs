@@ -1,10 +1,13 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using First = EFCore.Mapping.M2M.Scenarios.First;
+using Second = EFCore.Mapping.M2M.Scenarios.Second;
 
 await RunFirstScenarioAsync().ConfigureAwait(false);
+await RunSecondScenarioAsync().ConfigureAwait(false);
 
 Console.WriteLine("Press any key to exit..");
 Console.ReadKey();
@@ -37,6 +40,48 @@ static async Task RunFirstScenarioAsync()
     {
         Console.WriteLine($"User: { user.Name }");
     }
+
+    await context.DisposeAsync();
+
+    Console.WriteLine("Press any key to continue..");
+    Console.ReadKey();
+    Console.Clear();
+}
+
+static async Task RunSecondScenarioAsync()
+{
+    await using var context = new Second.DataContext();
+    await context.Database.EnsureDeletedAsync();
+    await context.Database.EnsureCreatedAsync();
+
+    var user1 = new Second.Entities.User { Name = "foo" };
+    var user2 = new Second.Entities.User { Name = "bar" };
+
+    var group1 = new Second.Entities.Group
+    {
+        Name = "fizz",
+        Users = new List<Second.Entities.User> { user1, user2 }
+    };
+    var group2 = new Second.Entities.Group
+    {
+        Name = "buzz",
+        Users = new List<Second.Entities.User> { user1 }
+    };
+
+    context.AddRange(user1, user2, group1, group2);
+    _ = await context.SaveChangesAsync();
+
+    var usersInFizzGroup = await context
+        .Users
+        .Where(user => user.Groups.Any(group => group.Name.Equals("fizz")))
+        .ToListAsync();
+
+    foreach (var user in usersInFizzGroup)
+    {
+        Console.WriteLine($"User: { user.Name }");
+    }
+
+    await context.DisposeAsync();
 
     Console.WriteLine("Press any key to continue..");
     Console.ReadKey();

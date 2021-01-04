@@ -79,5 +79,72 @@ WHERE EXISTS (
   SELECT 1
   FROM [Membership] AS [m]
   LEFT JOIN [Groups] AS [g] ON [m].[GroupId] = [g].[Id]
-  WHERE ([u].[Id] = [m].[UserId]) AND ([g].[Name] = N'group-fizz'))
+  WHERE ([u].[Id] = [m].[UserId]) AND ([g].[Name] = N'fizz'))
+```
+
+### Scenario 2
+``` csharp
+public class User
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public ICollection<Group> Groups { get; set; }
+}
+
+public class Group
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public ICollection<User> Users { get; set; }
+}
+
+public class DataContext : DbContext
+{
+    public virtual DbSet<User> Users { get; set; }
+    public virtual DbSet<Group> Groups { get; set; }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        optionsBuilder
+            .UseSqlServer("..")
+            .LogTo(System.Console.WriteLine, new[] { RelationalEventId.CommandExecuted })
+            .EnableSensitiveDataLogging();
+    }
+}
+
+// Query sample
+var usersInFizzGroup = await context
+    .Users
+    .Where(user => user.Groups.Any(group => group.Name.Equals("fizz")))
+    .ToListAsync();
+```
+
+``` sql
+CREATE TABLE [Users] (
+  [Id] int NOT NULL IDENTITY,
+  [Name] nvarchar(max) NULL,
+  CONSTRAINT [PK_Users] PRIMARY KEY ([Id])
+);
+
+CREATE TABLE [Groups] (
+  [Id] int NOT NULL IDENTITY,
+  [Name] nvarchar(max) NULL,
+  CONSTRAINT [PK_Groups] PRIMARY KEY ([Id])
+);
+
+CREATE TABLE [GroupUser] (
+  [GroupsId] int NOT NULL,
+  [UsersId] int NOT NULL,
+  CONSTRAINT [PK_GroupUser] PRIMARY KEY ([GroupsId], [UsersId]),
+  CONSTRAINT [FK_GroupUser_Groups_GroupsId] FOREIGN KEY ([GroupsId]) REFERENCES [Groups] ([Id]) ON DELETE CASCADE,
+  CONSTRAINT [FK_GroupUser_Users_UsersId] FOREIGN KEY ([UsersId]) REFERENCES [Users] ([Id]) ON DELETE CASCADE
+);
+
+SELECT [u].[Id], [u].[Name]
+FROM [Users] AS [u]
+WHERE EXISTS (
+  SELECT 1
+  FROM [GroupUser] AS [g]
+  INNER JOIN [Groups] AS [g0] ON [g].[GroupsId] = [g0].[Id]
+  WHERE ([u].[Id] = [g].[UsersId]) AND ([g0].[Name] = N'fizz'))
 ```
