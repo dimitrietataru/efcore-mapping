@@ -323,7 +323,7 @@ var dogsWhoLikeBalls = await context
 CREATE TABLE [Animals] (
   [Id] int NOT NULL IDENTITY,
   [Species] nvarchar(max) NULL,
-  [Discriminator] nvarchar(max) NOT NULL, // EF magic
+  [Discriminator] nvarchar(max) NOT NULL, /* EF magic */
   [EducationLevel] nvarchar(max) NULL,
   [Name] nvarchar(max) NULL,
   [FavoriteToy] nvarchar(max) NULL,
